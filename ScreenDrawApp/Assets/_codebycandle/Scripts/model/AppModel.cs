@@ -1,7 +1,25 @@
 ﻿using UnityEngine;
 
-public class AppModel
+public class AppModel:MonoBehaviour
 {
+    private static AppModel instance;
+
+    public enum stateOption
+    {
+        invalid,
+        preinit,
+        ready,
+        placing,
+        drawing,
+        placed
+    };
+
+    public stateOption curState
+    {
+        get;
+        set;
+    }
+
     static private MaterialType[] _materials;
     static public MaterialType[] materials
     {
@@ -22,13 +40,31 @@ public class AppModel
         set;
     }
 
+    static public AppModel Instance
+    {
+        get
+        {
+            if (instance == null)
+            {
+                instance = new GameObject("AppModel").AddComponent<AppModel>();
+            }
+
+            return instance;
+        }
+    }
+
+    public void OnApplicationQuit()
+    {
+        instance = null;
+    }
+
     static private MaterialType[] GetStubData()
     {
         MaterialType[] data = new MaterialType[4];
-        data[0] = new MaterialType("1", new Color32(217, 241, 240, 255));
-        data[1] = new MaterialType("2", new Color32(160, 160, 160, 255));
-        data[2] = new MaterialType("3", new Color32(255, 255, 1, 255));
-        data[3] = new MaterialType("4", new Color32(195, 134, 0, 255));
+        data[0] = new MaterialType("fiber", new Color32(70, 166, 204, 105));
+        data[1] = new MaterialType("copper", new Color32(255, 167, 48, 105));
+        data[2] = new MaterialType("brick", new Color32(204, 70, 97, 105));
+        data[3] = new MaterialType("plastic", new Color32(151, 204, 32, 105));
 
         return data;
     }
