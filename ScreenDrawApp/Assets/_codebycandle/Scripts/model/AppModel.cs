@@ -12,6 +12,7 @@ namespace Codebycandle.ScreenDrawApp
             preinit,
             ready,
             placing,
+            drawingStarted,
             drawing,
             placed,
             readyNext

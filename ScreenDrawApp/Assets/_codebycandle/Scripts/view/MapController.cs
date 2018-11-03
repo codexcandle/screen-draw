@@ -8,9 +8,26 @@ namespace Codebycandle.ScreenDrawApp
     [RequireComponent(typeof(ObjectPooler))]
     public class MapController:MonoBehaviour
     {
-        public delegate void OnItemEventDelegate();
-        public static OnItemEventDelegate OnMaterialPathAddStart;
-        public static OnItemEventDelegate OnMaterialPathAddComplete;
+        public delegate void OnMaterialEventDelegate();
+        public static OnMaterialEventDelegate OnMaterialPathAddStart;
+        public static OnMaterialEventDelegate OnMaterialPathMinPointsReached;
+        public static OnMaterialEventDelegate OnMaterialPathAddComplete;
+
+        public delegate void OnPathSegmentDistanceUpdateDelegate(float distance);
+        public static event OnPathSegmentDistanceUpdateDelegate OnPathSegmentDistanceUpdate;
+
+        private int _materialPathCount;
+        public int materialPathCount
+        {
+            get
+            {
+                return _materialPathCount;
+            }
+            private set
+            {
+                _materialPathCount = value;
+            }
+        }
 
         [SerializeField] private GameObject pipeSegmentPrefab;
         [SerializeField] private Transform pointRoot;
@@ -18,7 +35,7 @@ namespace Codebycandle.ScreenDrawApp
 
         private Camera cam;
         private Vector3 lastPos;
-        private int materialPathCount;
+        private int pathEndpointMin = 2;
 
         private bool isPlacing;
         private bool awaitingDrawMovement;
@@ -32,8 +49,6 @@ namespace Codebycandle.ScreenDrawApp
         void Start()
         {
             cam = Camera.main;
-
-            RefreshMaterialPathCountText(true);
 
             // init pool
             lineObjecPool = GetComponent<ObjectPooler>();
@@ -133,9 +148,16 @@ namespace Codebycandle.ScreenDrawApp
 
             ////////////////////////////////////////////////
             LineRenderer rend = GetActiveLine();
-            rend.SetPosition(pointGOList.Count - 1, pos);
+            int pointCount = pointGOList.Count;
+            rend.SetPosition(pointCount - 1, pos);
             // rend.positionCount++;
             ////////////////////////////////////////////////
+
+            // dispatch event
+            if(pointGOList.Count >= pathEndpointMin)
+            {
+                OnMaterialPathMinPointsReached();
+            }
         }
 
         private void AddMapPoint(Vector3 pos)
@@ -161,6 +183,10 @@ namespace Codebycandle.ScreenDrawApp
             }
 
             line.SetPosition(line.positionCount - 1, destPos);
+
+            // fire event w/ segment distance info
+            float distance = Vector3.Distance(pointGOList[pointGOList.Count - 1].transform.position, destPos);
+            OnPathSegmentDistanceUpdate(distance);
         }
 
         private LineRenderer GetActiveLine(int index = -1)
@@ -219,11 +245,9 @@ namespace Codebycandle.ScreenDrawApp
         {
             TrimLine();
 
-            materialPathCount++;
-
-            RefreshMaterialPathCountText();
-
             pointRoot.gameObject.SetActive(false);
+
+            _materialPathCount++;
 
             // dispatch event
             if (OnMaterialPathAddComplete != null) OnMaterialPathAddComplete();
@@ -242,12 +266,6 @@ namespace Codebycandle.ScreenDrawApp
         private Color GetActiveMaterialColor()
         {
             return AppModel.materials[AppModel.activeMaterialIndex].color;
-        }
-
-        private void RefreshMaterialPathCountText(bool reset = false)
-        {
-            string newTxt = reset ? "" : ("count: " + materialPathCount);
-            mapItemCountText.text = newTxt;
         }
     }
 }

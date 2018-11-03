@@ -7,12 +7,18 @@ public class UIController:MonoBehaviour
     public static event OnStageRevealedDelegate OnStageRevealed;
 
     [SerializeField] private CanvasGroup stageBlocker;
+    [SerializeField] private GameObject mapPointDistanceLabelGO;
+    [SerializeField] private GameObject camInstructionsLabelGO;
     [SerializeField] private Text mapPointDistanceText;
+    [SerializeField] private Text mapMaterialCountText;
     [SerializeField] private TMPro.TextMeshProUGUI promptText;
 
     public void Reset()
     {
-        SetMapPointDistanceText();
+        EnableMapPointDistanceLabelGO(false);
+        EnableCamInstructionsLabelGO(false);
+        SetPromptText("");
+        SetMaterialCount(-1);
     }
 
     public void RevealStage()
@@ -20,20 +26,39 @@ public class UIController:MonoBehaviour
         StartCoroutine(FadeEffect.FadeCanvas(stageBlocker, 1f, 0f, 1f, HandleBlockerFadeOutComplete));
     }
 
-    public void SetPromptText(string txt = "")
+    public void SetPromptText(string txt)
     {
         promptText.text = txt;
     }
 
-    public void SetMapPointDistanceText(string txt = "")
+    public void SetMapPointDistance(float distance)
     {
-        mapPointDistanceText.text = txt;
+        mapPointDistanceText.text = distance.ToString("f2");
+
+        EnableMapPointDistanceLabelGO(true);
+    }
+
+    public void SetMaterialCount(int count)
+    {
+        mapMaterialCountText.text = (count < 1) ? "" : "material count: " + count.ToString();
     }
 
     private void HandleBlockerFadeOutComplete()
     {
         stageBlocker.blocksRaycasts = false;
 
-        if(OnStageRevealed != null) OnStageRevealed();
+        EnableCamInstructionsLabelGO(true);
+
+        if (OnStageRevealed != null) OnStageRevealed();
+    }
+
+    private void EnableMapPointDistanceLabelGO(bool value)
+    {
+        mapPointDistanceLabelGO.SetActive(value);
+    }
+
+    private void EnableCamInstructionsLabelGO(bool value)
+    {
+        camInstructionsLabelGO.SetActive(value);
     }
 }
