@@ -5,22 +5,21 @@ namespace Codebycandle.ScreenDrawApp
 {
     public class DrawSceneManager:MonoBehaviour
     {
-        [SerializeField] private MaterialPanelController panel;
         [SerializeField] private MapController map;
         [SerializeField] private CameraRigController camRig;
+        // TODO - add ui-manager to decouple below refs
+        [SerializeField] private MaterialPanelController materialPanel;
+        [SerializeField] private CamControlPanelController camPanel;
         [SerializeField] private TMPro.TextMeshProUGUI promptText;
-        [SerializeField] private GameObject stageBlocker;
-
-        private bool stageActive;
+        [SerializeField] private CanvasGroup stageBlocker;
 
         private AppModel model;
+        private bool stageActive;
 
         private void SetViewState(AppModel.stateOption newState)
         {
             if (newState != AppModel.Instance.curState)
             {
-                int index = (int)newState;
-
                 switch (newState)
                 {
                     case AppModel.stateOption.preinit:
@@ -32,13 +31,9 @@ namespace Codebycandle.ScreenDrawApp
 
                         break;
                     case AppModel.stateOption.placing:
-                        camRig.Reset();
+                        SetPromptText("");
 
-                        if (stageBlocker.activeInHierarchy) stageBlocker.SetActive(false);
-
-                        SetPromptText("Place on map.");
-
-                        stageActive = true;
+                        StartCoroutine(FadeEffect.FadeCanvas(stageBlocker, 1f, 0f, 1f, HandleBlockerFadeOutComplete));
 
                         break;
                     case AppModel.stateOption.drawing:
@@ -55,6 +50,17 @@ namespace Codebycandle.ScreenDrawApp
             }
         }
 
+        private void HandleBlockerFadeOutComplete()
+        {
+            stageActive = true;
+
+            camRig.keyActive = true;
+
+            stageBlocker.blocksRaycasts = false;
+
+            SetPromptText("Plot on map.");
+        }
+
         private void Start()
         {
             Init();
@@ -64,28 +70,32 @@ namespace Codebycandle.ScreenDrawApp
         {
             model = AppModel.Instance;
 
-            MaterialPanelController.OnClick += HandlePanelClick;
+            MaterialPanelController.OnClick += HandleMaterialPanelClick;
 
             MapController.OnItemAddStart += HandleMapItemAddStart;
             MapController.OnItemAddComplete += HandleMapItemAddComplete;
+
+            CamControlPanelController.OnToggleMode += HandleCamControlModeToggle;
+            CamControlPanelController.OnNavButtonUp += HandleCamControlNavUp;
+            CamControlPanelController.OnNavButtonDown += HandleCamControlNavDown;
+            CamControlPanelController.OnNavButtonLeft += HandleCamControlNavLeft;
+            CamControlPanelController.OnNavButtonRight += HandleCamControlNavRight;
 
             StartCoroutine(StartScene());
         }
 
         private IEnumerator StartScene()
         {
-            // pre-init
             SetViewState(AppModel.stateOption.preinit);
 
             yield return new WaitForSeconds(1);
 
-            // ready
             SetViewState(AppModel.stateOption.ready);
 
             yield return new WaitForSeconds(2);
         }
 
-        private void HandlePanelClick(int index)
+        private void HandleMaterialPanelClick(int index)
         {
             AppModel.activeMaterialIndex = index;
 
@@ -103,6 +113,31 @@ namespace Codebycandle.ScreenDrawApp
         private void HandleMapItemAddComplete()
         {
             SetViewState(AppModel.stateOption.placed);
+        }
+
+        private void HandleCamControlModeToggle(bool value)
+        {
+            camRig.SetCamProjectionMode(value);
+        }
+
+        private void HandleCamControlNavUp()
+        {
+            camRig.RotateVertical(true);
+        }
+
+        private void HandleCamControlNavDown()
+        {
+            camRig.RotateVertical(false);
+        }
+
+        private void HandleCamControlNavLeft()
+        {
+            camRig.RotateHorizontal(true);
+        }
+
+        private void HandleCamControlNavRight()
+        {
+            camRig.RotateHorizontal(false);
         }
 
         private void SetPromptText(string txt)

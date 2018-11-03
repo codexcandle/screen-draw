@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using UnityEngine.UI;
+using System.Collections.Generic;
 
 namespace Codebycandle.ScreenDrawApp
 {
@@ -11,7 +11,8 @@ namespace Codebycandle.ScreenDrawApp
         public delegate void OnClickDelegate(int index);
         public static event OnClickDelegate OnClick;
 
-        private int buttonCount;
+        private List<PanelButton> buttonList;
+
         private int activeIndex;
 
         private void Start()
@@ -28,25 +29,27 @@ namespace Codebycandle.ScreenDrawApp
         {
             var types = AppModel.materials;
 
+            List<PanelButton> btns = new List<PanelButton>();
+
             for (int i = 0; i < types.Length; i++)
             {
                 MaterialType type = types[i];
 
                 var go = Instantiate(buttonPrefab, transform.position, transform.rotation) as GameObject;
 
+                // init button
                 var panelBtn = go.GetComponent<PanelButton>();
-                panelBtn.Init(i, type.materialName);
+                panelBtn.Init(i, type.materialName, type.color, Color.black);
                 panelBtn.OnClick += HandleButtonClick;
+                btns.Add(panelBtn);
 
+                // set parent & size
                 go.transform.SetParent(buttonRoot);
-
                 go.GetComponent<RectTransform>().sizeDelta = new Vector2(200, 40);
                 go.GetComponent<RectTransform>().localScale = new Vector3(1, 1, 1);
-
-                go.GetComponent<Image>().color = type.color;
             }
 
-            this.buttonCount = types.Length;
+            this.buttonList = btns;
         }
 
         private void HandleButtonClick(int index)
@@ -62,7 +65,7 @@ namespace Codebycandle.ScreenDrawApp
         private void SetActiveButton(int index)
         {
             // sanitize!
-            if (index < 0 || index >= buttonCount) return;
+            if (index < 0 || index >= buttonList.Count) return;
 
             // deselect old
             if (activeIndex > -1)
@@ -75,8 +78,18 @@ namespace Codebycandle.ScreenDrawApp
             var go2 = buttonRoot.GetChild(index).gameObject;
             go2.GetComponent<PanelButton>().selected = true;
 
-            // update model
+            DimNonSelectedButtons();
+
+            // update index
             this.activeIndex = index;
+        }
+
+        private void DimNonSelectedButtons()
+        {
+            foreach(PanelButton btn in buttonList)
+            {
+                btn.dimmed = btn.selected ? false : true;
+            }
         }
     }
 }

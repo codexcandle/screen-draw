@@ -1,74 +1,96 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-public class PanelButton:MonoBehaviour
+namespace Codebycandle.ScreenDrawApp
 {
-    public delegate void OnClickDelegate(int viewIndex);
-    public event OnClickDelegate OnClick;
-
-    private Image image;
-    private Button btn;
-
-    private bool isReady;
-
-    public int viewIndex
+    public class PanelButton:MonoBehaviour
     {
-        get;
-        set;
-    }
+        public delegate void OnClickDelegate(int viewIndex);
+        public event OnClickDelegate OnClick;
 
-    public string labelText
-    {
-        set
+        private Image image;
+        private Button btn;
+
+        private bool isReady;
+        private Color bgColor;
+        private Color textColor;
+
+        public int viewIndex
         {
-            if(!tf) tf = GetComponentInChildren<Text>();
-
-            tf.text = value;
+            get;
+            set;
         }
-    }
 
-    private bool _selected;
-    public bool selected
-    {
-        set
+        private Text tf;
+        public string labelText
         {
-            // sanitize!
-            if (!isReady) return;
-
-            // Image.Type imageType = value ? Image.Type.Filled: Image.Type.Sliced;
-
-            // image.type = imageType;
-
-            btn.interactable = !value;
-
-            _selected = value;
+            set
+            {
+                tf.text = value;
+            }
         }
-    }
 
-    private Text tf;
+        private bool _selected;
+        public bool selected
+        {
+            get
+            {
+                return _selected;
+            }
+            set
+            {
+                // sanitize!
+                if (!isReady) return;
 
-    public void Init(int viewIndex, string labelText)
-    {
-        this.viewIndex = viewIndex;
-        this.labelText = labelText;
+                btn.interactable = !value;
 
-        btn = GetButton();
+                _selected = value;
+            }
+        }
 
-        image = GetComponent<Image>();
+        public bool dimmed
+        {
+            set
+            {
+                SetImageColor(value ? Color.black : bgColor);
+                tf.color = value ? Color.white : textColor;
+            }
+        }
 
-        isReady = true;
-    }
+        public void Init(int viewIndex, string labelText, Color bgColor, Color textColor)
+        {
+            btn = GetButton();
 
-    private Button GetButton()
-    {
-        var btn = GetComponent<Button>();
-        btn.onClick.AddListener(() => HandleClick());
+            image = GetComponent<Image>();
+            image.color = bgColor;
 
-        return btn;
-    }
+            tf = GetComponentInChildren<Text>();
+            tf.color = textColor;
 
-    private void HandleClick()
-    {
-        OnClick(viewIndex);
+            this.viewIndex = viewIndex;
+            this.labelText = labelText;
+            this.bgColor = bgColor;
+            this.textColor = textColor;
+
+            isReady = true;
+        }
+
+        private Button GetButton()
+        {
+            var btn = GetComponent<Button>();
+            btn.onClick.AddListener(() => HandleClick());
+
+            return btn;
+        }
+
+        private void HandleClick()
+        {
+            OnClick(viewIndex);
+        }
+
+        private void SetImageColor(Color c)
+        {
+            image.color = c;
+        }
     }
 }

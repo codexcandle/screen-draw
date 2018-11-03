@@ -1,51 +1,81 @@
 ﻿using UnityEngine;
 
-public class CameraRigController:MonoBehaviour
+namespace Codebycandle.ScreenDrawApp
 {
-    public float xRate = 0f;    // degrees / sec
-    public float yRate = 20f;
-    public float zRate = 0f;
-
-    private bool doSpin;
-    private bool isResetting;
-
-    float speed = 0.01f;
-
-    private Quaternion baseRotation;
-
-    public void Reset()
+    public class CameraRigController:MonoBehaviour
     {
-        isResetting = true;
-    }
+        private float rotateSpeed = 100F;
 
-    void Start()
-    {
-        Init();
-    }
+        private Camera cam;
 
-    void Update()
-    {
-        if (isResetting)
+        public bool keyActive
         {
-            transform.rotation = Quaternion.Lerp(transform.rotation, baseRotation, Time.time * speed);
+            get;
+            set;
+        }
 
-            if (transform.rotation == Quaternion.identity)
+        public void RotateVertical(bool up)
+        {
+            Rotate((up ? rotateSpeed : -rotateSpeed), 0, 0);
+        }
+
+        public void RotateHorizontal(bool left)
+        {
+            Rotate(0, (left ? rotateSpeed : -rotateSpeed), 0);
+        }
+
+        public void SetCamProjectionMode(bool orthographic)
+        {
+            cam.orthographic = orthographic;
+        }
+
+        void Start()
+        {
+            Init();
+        }
+
+        void Update()
+        {
+            if (!keyActive) return;
+
+            // arrow-keys
+            if (Input.GetKey(KeyCode.UpArrow))
             {
-                isResetting = false;
+                RotateVertical(true);
+            }
+            if (Input.GetKey(KeyCode.DownArrow))
+            {
+                RotateVertical(false);
+            }
+            if (Input.GetKey(KeyCode.LeftArrow))
+            {
+                RotateHorizontal(true);
+            }
+            if (Input.GetKey(KeyCode.RightArrow))
+            {
+                RotateHorizontal(false);
+            }
 
-                doSpin = false;
+            // space-bar
+            if(Input.GetKeyDown(KeyCode.Space))
+            {
+                SetCamProjectionMode(!cam.orthographic);
             }
         }
-        else if (doSpin)
+
+        private void Init()
         {
-            transform.Rotate(new Vector3(xRate, yRate, zRate) * Time.deltaTime);
+            cam = Camera.main;
         }
-    }
 
-    private void Init()
-    {
-        baseRotation = transform.rotation;
+        private void Rotate(float xSpeed, float ySpeed, float zSpeed)
+        {
+            Vector3 temp = transform.rotation.eulerAngles;
+            temp.x += (xSpeed * Time.deltaTime);
+            temp.y += (ySpeed * Time.deltaTime);
+            temp.z += (zSpeed * Time.deltaTime);
 
-        doSpin = true;
+            transform.rotation = Quaternion.Euler(temp);
+        }
     }
 }
