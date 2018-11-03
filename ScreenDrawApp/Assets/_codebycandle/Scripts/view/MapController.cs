@@ -9,13 +9,12 @@ namespace Codebycandle.ScreenDrawApp
     public class MapController:MonoBehaviour
     {
         public delegate void OnItemEventDelegate();
-        public static OnItemEventDelegate OnItemAddStart;
-        public static OnItemEventDelegate OnItemAddComplete;
+        public static OnItemEventDelegate OnMaterialPathAddStart;
+        public static OnItemEventDelegate OnMaterialPathAddComplete;
 
         [SerializeField] private GameObject pipeSegmentPrefab;
         [SerializeField] private Transform pointRoot;
         [SerializeField] private Text mapItemCountText;
-        [SerializeField] private int maxPathCount = 10;
 
         private Camera cam;
         private Vector3 lastPos;
@@ -43,15 +42,6 @@ namespace Codebycandle.ScreenDrawApp
 
         void FixedUpdate()
         {
-            // TODO - deprecate this hack (view states?)
-            if (pathReadyForSubmission)
-            {
-                if (Input.GetKey(KeyCode.Backspace))
-                {
-                    SaveMaterialPath();
-                }
-            }
-
             bool clicked = false;
             if (Input.GetMouseButtonDown(0))
             {
@@ -73,16 +63,13 @@ namespace Codebycandle.ScreenDrawApp
                 {
                     if (clicked)
                     {
-                        if (materialPathCount < maxPathCount)
+                        if (isPlacing)
                         {
-                            if (isPlacing)
-                            {
-                                AddMidPoint(hitInfo.point);
-                            }
-                            else
-                            {
-                                AddStartPoint(hitInfo.point);
-                            }
+                            AddMidPoint(hitInfo.point);
+                        }
+                        else
+                        {
+                            AddStartPoint(hitInfo.point);
                         }
                     }
                     else if (isPlacing)
@@ -110,24 +97,15 @@ namespace Codebycandle.ScreenDrawApp
                             DrawTempLine(hitInfo.point);
 
                             // listen for "trim" command
-                            if (Input.GetKey(KeyCode.Escape))
+                            if (Input.GetKeyUp(KeyCode.Escape))
                             {
-                                TrimLine();
+                                SaveMaterialPath();
                             }
                         }
                     }
                 }
             }
         }
-
-
-
-
-
-
-
-
-
 
         #region METHODS-PRIVATE-POINTS
         private void AddStartPoint(Vector3 pos)
@@ -138,7 +116,7 @@ namespace Codebycandle.ScreenDrawApp
             awaitingDrawMovement = true;
 
             // dispatch event
-            if (OnItemAddStart != null) OnItemAddStart();
+            if (OnMaterialPathAddStart != null) OnMaterialPathAddStart();
 
             ////////////////////////////////////////////////
             LineRenderer rend = GetActiveLine();
@@ -156,7 +134,7 @@ namespace Codebycandle.ScreenDrawApp
             ////////////////////////////////////////////////
             LineRenderer rend = GetActiveLine();
             rend.SetPosition(pointGOList.Count - 1, pos);
-            //// rend.positionCount++;
+            // rend.positionCount++;
             ////////////////////////////////////////////////
         }
 
@@ -172,13 +150,6 @@ namespace Codebycandle.ScreenDrawApp
             pointGOList.Add(go);
         }
         #endregion
-
-
-
-
-
-
-
 
         #region METHODS-PRIVATE-LINES
         private void DrawTempLine(Vector3 destPos)
@@ -244,6 +215,20 @@ namespace Codebycandle.ScreenDrawApp
             line.loop = false;
         }
 
+        private void SaveMaterialPath()
+        {
+            TrimLine();
+
+            materialPathCount++;
+
+            RefreshMaterialPathCountText();
+
+            pointRoot.gameObject.SetActive(false);
+
+            // dispatch event
+            if (OnMaterialPathAddComplete != null) OnMaterialPathAddComplete();
+        }
+
         private void TrimLine()
         {
             isPlacing = false;
@@ -252,24 +237,7 @@ namespace Codebycandle.ScreenDrawApp
 
             pathReadyForSubmission = true;
         }
-
-        private void SaveMaterialPath()
-        {
-            RefreshMaterialPathCountText();
-
-            pointRoot.gameObject.SetActive(false);
-
-            // dispatch event
-            if (OnItemAddComplete != null) OnItemAddComplete();
-        }
         #endregion
-
-
-
-
-
-
-
 
         private Color GetActiveMaterialColor()
         {
@@ -278,7 +246,7 @@ namespace Codebycandle.ScreenDrawApp
 
         private void RefreshMaterialPathCountText(bool reset = false)
         {
-            string newTxt = reset ? "" : ("item count: " + materialPathCount + " / " + maxPathCount);
+            string newTxt = reset ? "" : ("count: " + materialPathCount);
             mapItemCountText.text = newTxt;
         }
     }

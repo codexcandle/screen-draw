@@ -13,7 +13,8 @@ namespace Codebycandle.ScreenDrawApp
             ready,
             placing,
             drawing,
-            placed
+            placed,
+            readyNext
         };
 
         public stateOption curState

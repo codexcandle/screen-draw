@@ -7,18 +7,15 @@ namespace Codebycandle.ScreenDrawApp
     {
         [SerializeField] private MapController map;
         [SerializeField] private CameraRigController camRig;
-        // TODO - add ui-manager to decouple below refs
+        [SerializeField] private UIController ui;
+        // TODO - move below to ui-controller
         [SerializeField] private MaterialPanelController materialPanel;
-        [SerializeField] private CamControlPanelController camPanel;
-        [SerializeField] private TMPro.TextMeshProUGUI promptText;
-        [SerializeField] private CanvasGroup stageBlocker;
 
         private AppModel model;
-        private bool stageActive;
 
         private void SetViewState(AppModel.stateOption newState)
         {
-            if (newState != AppModel.Instance.curState)
+            if (newState != model.curState)
             {
                 switch (newState)
                 {
@@ -31,17 +28,21 @@ namespace Codebycandle.ScreenDrawApp
 
                         break;
                     case AppModel.stateOption.placing:
-                        SetPromptText("");
+                        SetPromptText("Plot on map.");
 
-                        StartCoroutine(FadeEffect.FadeCanvas(stageBlocker, 1f, 0f, 1f, HandleBlockerFadeOutComplete));
+                        camRig.keyActive = true;
 
                         break;
                     case AppModel.stateOption.drawing:
-                        SetPromptText("Draw path.");
+                        SetPromptText("Draw material path.");
 
                         break;
                     case AppModel.stateOption.placed:
-                        SetPromptText("Add next path.");
+                        SetPromptText("-path confirmed!");
+
+                        break;
+                    case AppModel.stateOption.readyNext:
+                        SetPromptText("Add next material path.");
 
                         break;
                 }
@@ -50,36 +51,26 @@ namespace Codebycandle.ScreenDrawApp
             }
         }
 
-        private void HandleBlockerFadeOutComplete()
-        {
-            stageActive = true;
-
-            camRig.keyActive = true;
-
-            stageBlocker.blocksRaycasts = false;
-
-            SetPromptText("Plot on map.");
-        }
-
-        private void Start()
+        void Start()
         {
             Init();
+        }
+
+        void OnApplicationQuit()
+        {
+            Destroy();
         }
 
         private void Init()
         {
             model = AppModel.Instance;
 
+            UIController.OnStageRevealed += HandleUIStageRevealed;
+
             MaterialPanelController.OnClick += HandleMaterialPanelClick;
 
-            MapController.OnItemAddStart += HandleMapItemAddStart;
-            MapController.OnItemAddComplete += HandleMapItemAddComplete;
-
-            CamControlPanelController.OnToggleMode += HandleCamControlModeToggle;
-            CamControlPanelController.OnNavButtonUp += HandleCamControlNavUp;
-            CamControlPanelController.OnNavButtonDown += HandleCamControlNavDown;
-            CamControlPanelController.OnNavButtonLeft += HandleCamControlNavLeft;
-            CamControlPanelController.OnNavButtonRight += HandleCamControlNavRight;
+            MapController.OnMaterialPathAddStart += HandleMapPathAddStart;
+            MapController.OnMaterialPathAddComplete += HandleMapPathAddComplete;
 
             StartCoroutine(StartScene());
         }
@@ -95,24 +86,40 @@ namespace Codebycandle.ScreenDrawApp
             yield return new WaitForSeconds(2);
         }
 
+        private IEnumerator ShowMaterialPathAdded()
+        {
+            SetViewState(AppModel.stateOption.placed);
+
+            yield return new WaitForSeconds(2);
+
+            SetViewState(AppModel.stateOption.readyNext);
+        }
+
+        private void HandleUIStageRevealed()
+        {
+            SetViewState(AppModel.stateOption.placing);
+        }
+
         private void HandleMaterialPanelClick(int index)
         {
             AppModel.activeMaterialIndex = index;
 
-            if (!stageActive)
+            if (model.curState == AppModel.stateOption.ready)
             {
-                SetViewState(AppModel.stateOption.placing);
+                SetPromptText("");
+
+                ui.RevealStage();
             }
         }
 
-        private void HandleMapItemAddStart()
+        private void HandleMapPathAddStart()
         {
             SetViewState(AppModel.stateOption.drawing);
         }
 
-        private void HandleMapItemAddComplete()
+        private void HandleMapPathAddComplete()
         {
-            SetViewState(AppModel.stateOption.placed);
+            StartCoroutine(ShowMaterialPathAdded());
         }
 
         private void HandleCamControlModeToggle(bool value)
@@ -142,7 +149,17 @@ namespace Codebycandle.ScreenDrawApp
 
         private void SetPromptText(string txt)
         {
-            promptText.text = txt;
+            ui.SetPromptText(txt);
+        }
+
+        private void Destroy()
+        {
+            UIController.OnStageRevealed -= HandleUIStageRevealed;
+
+            MaterialPanelController.OnClick -= HandleMaterialPanelClick;
+
+            MapController.OnMaterialPathAddStart -= HandleMapPathAddStart;
+            MapController.OnMaterialPathAddComplete -= HandleMapPathAddComplete;
         }
     }
 }
