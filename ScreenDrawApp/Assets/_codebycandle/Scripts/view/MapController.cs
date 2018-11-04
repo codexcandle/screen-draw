@@ -16,26 +16,29 @@ namespace Codebycandle.ScreenDrawApp
         public delegate void OnPathSegmentDistanceUpdateDelegate(float distance);
         public static event OnPathSegmentDistanceUpdateDelegate OnPathSegmentDistanceUpdate;
 
-        private int _materialPathCount;
-        public int materialPathCount
+        private int _pathCount;
+        public int pathCount
         {
             get
             {
-                return _materialPathCount;
+                return _pathCount;
             }
             private set
             {
-                _materialPathCount = value;
+                _pathCount = value;
             }
         }
 
         [SerializeField] private GameObject pipeSegmentPrefab;
         [SerializeField] private Transform pointRoot;
+        [SerializeField] private Transform lineRoot;
         [SerializeField] private Text mapItemCountText;
 
         private Camera cam;
         private Vector3 lastPos;
-        private int pathEndpointMin = 2;
+        private int pathPointMin = 2;
+        private int curPathPointCount;
+        private float pathDistanceSaved;
 
         private bool isPlacing;
         private bool awaitingDrawMovement;
@@ -52,7 +55,7 @@ namespace Codebycandle.ScreenDrawApp
 
             // init pool
             lineObjecPool = GetComponent<ObjectPooler>();
-            lineObjecPool.Init();
+            lineObjecPool.Init(lineRoot);
         }
 
         void FixedUpdate()
@@ -97,7 +100,7 @@ namespace Codebycandle.ScreenDrawApp
                                 awaitingDrawMovement = false;
 
                                 // if => not first point
-                                if(pointGOList.Count > 1)
+                                if(curPathPointCount > 1)
                                 {
                                     /*
                                     update line-pos count ONLY after
@@ -112,6 +115,8 @@ namespace Codebycandle.ScreenDrawApp
                             DrawTempLine(hitInfo.point);
 
                             // listen for "trim" command
+                            // + HACK to ensure valid shape count
+                            if (curPathPointCount < 2) return;
                             if (Input.GetKeyUp(KeyCode.Escape))
                             {
                                 SaveMaterialPath();
@@ -138,6 +143,9 @@ namespace Codebycandle.ScreenDrawApp
             rend.SetPosition(0, pos);
             rend.positionCount++;
             ////////////////////////////////////////////////
+            
+            // ensure value reset
+            pathDistanceSaved = 0F;
         }
 
         private void AddMidPoint(Vector3 pos)
@@ -146,15 +154,18 @@ namespace Codebycandle.ScreenDrawApp
 
             awaitingDrawMovement = true;
 
+            // update "saved distance" 
+            pathDistanceSaved += Vector3.Distance(pointGOList[pointGOList.Count - 2].transform.position, pos);
+
             ////////////////////////////////////////////////
             LineRenderer rend = GetActiveLine();
             int pointCount = pointGOList.Count;
-            rend.SetPosition(pointCount - 1, pos);
+            rend.SetPosition(curPathPointCount - 1, pos);
             // rend.positionCount++;
             ////////////////////////////////////////////////
 
-            // dispatch event
-            if(pointGOList.Count >= pathEndpointMin)
+            // dispatch event that "valid" minimum path-point count reached
+            if(curPathPointCount >= pathPointMin)
             {
                 OnMaterialPathMinPointsReached();
             }
@@ -163,13 +174,14 @@ namespace Codebycandle.ScreenDrawApp
         private void AddMapPoint(Vector3 pos)
         {
             GameObject go = Instantiate(pipeSegmentPrefab, pos, transform.rotation) as GameObject;
-
             go.GetComponent<Renderer>().material.color = GetActiveMaterialColor();
-
             go.transform.SetParent(pointRoot);
 
             if (pointGOList == null) pointGOList = new List<GameObject>();
             pointGOList.Add(go);
+
+            // update count
+            curPathPointCount++;
         }
         #endregion
 
@@ -184,30 +196,28 @@ namespace Codebycandle.ScreenDrawApp
 
             line.SetPosition(line.positionCount - 1, destPos);
 
-            // fire event w/ segment distance info
-            float distance = Vector3.Distance(pointGOList[pointGOList.Count - 1].transform.position, destPos);
-            OnPathSegmentDistanceUpdate(distance);
+            // update path distance info
+            float curSegmentDistance = Vector3.Distance(pointGOList[pointGOList.Count - 1].transform.position, destPos);
+            
+            // fire event
+            OnPathSegmentDistanceUpdate(curSegmentDistance + pathDistanceSaved);
         }
 
-        private LineRenderer GetActiveLine(int index = -1)
+        private LineRenderer GetActiveLine()
         {
             if(activeLines == null)
             {
                 activeLines = new List<LineRenderer>();
+            }
 
+            // make NEW line object if needed
+            int activeCount = activeLines.Count;
+            if(_pathCount == activeCount)
+            {
                 activeLines.Add(GetNewLineObject());
             }
 
-            int activeCount = activeLines.Count;
-
-            if((index < 0) || (index >= activeCount))
-            {
-                return activeLines[0];
-            }
-            else
-            {
-                return activeLines[index];
-            }
+            return activeLines[_pathCount];
         }
 
         private LineRenderer GetNewLineObject()
@@ -245,9 +255,12 @@ namespace Codebycandle.ScreenDrawApp
         {
             TrimLine();
 
-            pointRoot.gameObject.SetActive(false);
+            // TODO - hide for now, will recycle.
+            // pointRoot.gameObject.SetActive(false);
 
-            _materialPathCount++;
+            _pathCount++;
+
+            curPathPointCount = 0;
 
             // dispatch event
             if (OnMaterialPathAddComplete != null) OnMaterialPathAddComplete();

@@ -1,23 +1,25 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class MaterialType:MonoBehaviour
+namespace Codebycandle.ScreenDrawApp
 {
-    public Color32 color
+    public class MaterialType:MonoBehaviour
     {
-        get;
-        private set;
-    }
+        public Color32 color
+        {
+            get;
+            private set;
+        }
 
-    public string materialName
-    {
-        get;
-        private set;
-    }
+        public string materialName
+        {
+            get;
+            private set;
+        }
 
-    public MaterialType(string materialName, Color32 color)
-    {
-        this.materialName = materialName;
-        this.color = color;
+        public MaterialType(string materialName, Color32 color)
+        {
+            this.materialName = materialName;
+            this.color = color;
+        }
     }
 }

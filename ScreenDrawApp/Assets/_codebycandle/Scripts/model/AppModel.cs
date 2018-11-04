@@ -57,7 +57,7 @@ namespace Codebycandle.ScreenDrawApp
             }
         }
 
-        public void OnApplicationQuit()
+        void OnApplicationQuit()
         {
             instance = null;
         }

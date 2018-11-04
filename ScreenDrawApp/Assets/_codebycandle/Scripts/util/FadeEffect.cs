@@ -1,11 +1,9 @@
 ﻿// SOURCE: http://unity.grogansoft.com/fade-your-ui-in-and-out/
-
-using System;
+// .... though I added an "onComplete" handler delegate!
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class FadeEffect : MonoBehaviour
+public class FadeEffect:MonoBehaviour
 {
     public delegate void OnCompleteDelegate();
 

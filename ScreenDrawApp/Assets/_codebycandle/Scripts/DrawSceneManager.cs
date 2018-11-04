@@ -24,31 +24,34 @@ namespace Codebycandle.ScreenDrawApp
 
                         break;
                     case AppModel.stateOption.ready:
-                        SetPromptText("Select material.");
+                        SetPromptText("Please select material.");
 
                         break;
                     case AppModel.stateOption.placing:
-                        SetPromptText("Click to draw.");
+                        SetPromptText("Click map to begin drawing material path.");
 
                         camRig.keyActive = true;
 
                         break;
                     case AppModel.stateOption.drawingStarted:
-                        SetPromptText("Keep drawing. (MINIMUM = 2 points)");
+                        SetPromptText("(-minimum of 2 points required.)");
 
                         break;
                     case AppModel.stateOption.drawing:
-                        SetPromptText("Continue (or ESC to save path!)");
+                        SetPromptText("Extend path. (or hit ESC to save)");
 
                         break;
                     case AppModel.stateOption.placed:
-                        SetPromptText("-path saved!");
+                        SetPromptText("-Path saved!");
 
-                        ui.SetMaterialCount(map.materialPathCount);
+                        // TODO - implement ACTUAL SERIALIZATION for saving data!
+                        // - just saves to map for now...
+
+                        ui.SetMaterialCount(map.pathCount);
 
                         break;
                     case AppModel.stateOption.readyNext:
-                        SetPromptText("Great!  Draw more or select new material.");
+                        SetPromptText("Draw next path, or select new material.");
 
                         break;
                 }

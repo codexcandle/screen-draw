@@ -20,9 +20,7 @@ namespace Codebycandle.ScreenDrawApp
             }
         }
 
-        public void Init(int itemCount = 10,
-                            int minSpecificPrefabCount = -1
-                            /* Debris.Kind specificPrefabDebrisKind = Debris.Kind.Blue */)
+        public void Init(Transform objectRoot = null, int itemCount = 10, int minSpecificPrefabCount = -1)
         {
             pooledObjects = new List<GameObject>();
 
@@ -35,17 +33,6 @@ namespace Codebycandle.ScreenDrawApp
             for (int i = 0; i < itemCount; i++)
             {
                 GameObject obj = null;
-
-                /*
-                if (rNum > 0 && i < rNum)
-                {
-                    obj = (GameObject)Instantiate(GetPrefabByDebrisKind(specificPrefabDebrisKind));
-                }
-                else
-                {
-                    obj = (GameObject)Instantiate(GetRandomPrefab());
-                }
-                */
 
                 obj = (GameObject)Instantiate(prefab);
 
@@ -86,31 +73,5 @@ namespace Codebycandle.ScreenDrawApp
         {
             current = this;
         }
-
-        /*
-        private GameObject GetPrefabByDebrisKind(Debris.Kind kind)
-        {
-            foreach (GameObject go in prefabs)
-            {
-                Debris debris = go.GetComponent<Debris>();
-                if (debris != null)
-                {
-                    if (debris.kind == kind)
-                    {
-                        return go;
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        private GameObject GetRandomPrefab()
-        {
-            int index = UnityEngine.Random.Range(0, prefabs.Length);
-
-            return prefabs[index];
-        }
-        */
     }
 }
