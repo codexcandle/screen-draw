@@ -236,7 +236,6 @@ namespace Codebycandle.ScreenDrawApp
         private void InitLineRenderer(LineRenderer line)
         {
             line.gameObject.SetActive(false);
-            line.material = new Material(Shader.Find("Particles/Additive"));
             line.widthMultiplier = 0.2f;
             line.positionCount = 1;
 
